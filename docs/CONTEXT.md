@@ -29,7 +29,7 @@ desktop client could plug into later without backend rework.
 |---|---|---|
 | Frontend | Next.js (App Router, TypeScript), single app at repo root | No monorepo — decided against it since desktop-readiness is achieved by keeping logic out of Next.js entirely, not by repo layout. Revisit only when the desktop app build actually starts. |
 | Hosting | Vercel | Connected to GitHub for preview deploys per PR + prod deploy on merge to main. |
-| Auth | Clerk | Email magic link + SMS OTP both supported; which one(s) are actually enabled at launch is a launch-time decision, not an architecture one. |
+| Auth | Clerk | Email magic link + SMS OTP both supported; which one(s) are actually enabled at launch is a launch-time decision, not an architecture one. **SMS is sent via our own Twilio account**, not Clerk's bundled gateway (see "SMS delivery" below). |
 | Database | Supabase (Postgres) | Real SQL + full-text search (`tsvector`), no NoSQL needed — the data is relational (songs, plans, plan_items, profiles). |
 | Identity sync | Clerk → Supabase `profiles` table via webhook | Clerk is the source of truth for identity. Supabase RLS needs role data *inside Postgres* to enforce permissions, so a `profiles` table mirrors `clerk_user_id`, `role`, `display_name`, kept in sync via a Clerk webhook. |
 | Auth↔DB trust | Clerk native Third-Party Auth integration (no JWT template) | The old "Supabase JWT template" approach was deprecated by Clerk on April 1, 2025 (it required sharing your Supabase JWT secret with Clerk). Current approach: activate the Supabase integration in Clerk (Clerk side) to get a Clerk domain, add Clerk as a Third-Party Auth provider in Supabase using that domain (Supabase side). No shared secret. The Supabase client is created with an `accessToken()` callback that returns `session.getToken()` (client) / `auth().getToken()` (server) — no manual JWT copying. |
@@ -69,6 +69,18 @@ Canonical mechanism, built once:
 
 Offline resilience (wifi dropping mid-service) is handled *separately*, by caching the active
 plan's song data client-side (IndexedDB) when a plan goes live — not by the sync transport itself.
+
+## SMS delivery
+
+SMS OTP is sent through our own Twilio account, not Clerk's bundled SMS gateway — mainly for cost
+control (Clerk's per-message markup vs. direct Twilio billing) and because the church directly
+owns the sending number/reputation. Clerk's documented mechanism for this is self-delivery: you
+disable "Delivered by Clerk" for SMS, and Clerk fires an `sms.created` webhook that the app
+forwards to Twilio, rather than a simple "paste your Twilio credentials into Clerk" dashboard
+option — this was unconfirmed against the live dashboard as of this writing (see backlog task
+M10). US numbers also need A2P 10DLC brand/campaign registration through Twilio (task M9) or
+carriers will filter the messages — this has real approval lag and fees, budget time for it before
+relying on SMS login working.
 
 ## Roles
 
