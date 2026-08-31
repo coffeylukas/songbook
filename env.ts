@@ -127,6 +127,14 @@ export const env = createEnv({
   },
   /** Treat `FOO=` in a .env file as "not set" rather than as a valid "". */
   emptyStringAsUndefined: true,
+  /**
+   * Opt-out for contexts that build or boot the app without needing real
+   * credentials — CI lint/build jobs, Playwright runs from a clean checkout,
+   * Docker image builds. It is off by default, so ordinary `pnpm dev`/`pnpm
+   * build` still fail fast; a caller has to ask for it explicitly with
+   * `SKIP_ENV_VALIDATION=1`. Never set it for a real deployment.
+   */
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   onValidationError: reportValidationError,
   /**
    * Guards the dangerous case: reading a secret from client code. Only the

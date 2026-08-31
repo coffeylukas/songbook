@@ -76,12 +76,25 @@ supabase start        # local Supabase (Postgres + Realtime) via Docker — not 
 
 ## Environment variables
 
-Populated once A5 (env validation) is done. Expect, at minimum: Clerk publishable/secret keys,
-Supabase URL, Supabase **Publishable key** (client-safe — replaces the legacy `anon` key) and
-Supabase **Secret key** (server-only, never exposed to the client — replaces the legacy
-`service_role` key), plus the Supabase DB password (a separate mechanism, needed for CLI/direct
-Postgres access, not part of the API key system). Real values live in `.env.local` (gitignored)
-and Vercel/GitHub Actions secrets — never in this repo.
+The schema lives in [`env.ts`](env.ts) (`@t3-oss/env-nextjs` + zod) and every variable name is
+documented in [`.env.example`](.env.example) — treat those two as the source of truth, don't keep
+a second list here. `env.ts` is imported from `next.config.ts`, so a missing or malformed value
+fails `pnpm dev`/`pnpm build` immediately with the variable named.
+
+- **Client** (`NEXT_PUBLIC_`-prefixed, safe in the browser bundle):
+  `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+- **Server-only** (never expose to the client): `CLERK_SECRET_KEY`, `SUPABASE_SECRET_KEY`.
+- **Not in the schema:** the Supabase DB password. It's a Supabase CLI / direct-Postgres
+  credential, not part of the API key system, and no app code reads it.
+
+Add a variable by editing `env.ts` _and_ `.env.example` together. Put it in the `server` block
+unless the browser genuinely needs it — a secret in the `client` block gets inlined into the
+JavaScript shipped to every visitor.
+
+Real values live in `.env.local` (gitignored) and Vercel/GitHub Actions secrets — never in this
+repo. `SKIP_ENV_VALIDATION=1` bypasses validation for CI builds and e2e runs from a clean
+checkout; never set it for a real deployment.
 
 ## Things Claude should NOT do here
 
