@@ -54,9 +54,11 @@ supabase start    # local Supabase (Postgres + Realtime) via Docker
 ## Environment variables
 
 Populated once A5 (env validation) is done. Expect, at minimum: Clerk publishable/secret keys,
-Supabase URL, Supabase anon key, Supabase service role key (server-only, never exposed to the
-client). Real values live in `.env.local` (gitignored) and Vercel/GitHub Actions secrets — never
-in this repo.
+Supabase URL, Supabase **Publishable key** (client-safe — replaces the legacy `anon` key) and
+Supabase **Secret key** (server-only, never exposed to the client — replaces the legacy
+`service_role` key), plus the Supabase DB password (a separate mechanism, needed for CLI/direct
+Postgres access, not part of the API key system). Real values live in `.env.local` (gitignored)
+and Vercel/GitHub Actions secrets — never in this repo.
 
 ## Things Claude should NOT do here
 

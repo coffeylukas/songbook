@@ -70,6 +70,14 @@ Canonical mechanism, built once:
 Offline resilience (wifi dropping mid-service) is handled *separately*, by caching the active
 plan's song data client-side (IndexedDB) when a plan goes live — not by the sync transport itself.
 
+## Supabase key naming
+
+Supabase has moved to **Publishable keys** (`sb_publishable_...`, client-safe) and **Secret keys**
+(`sb_secret_...`, server-only, bypasses RLS) replacing the legacy `anon` and `service_role` JWT
+keys. The legacy keys still work, but all new code should use Publishable/Secret. The database
+password (used for `supabase link`, migrations, direct Postgres connections via the CLI) is a
+separate mechanism from the API key system and is unaffected by this change.
+
 ## SMS delivery
 
 SMS OTP is sent through our own Twilio account, not Clerk's bundled SMS gateway — mainly for cost

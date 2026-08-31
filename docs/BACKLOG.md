@@ -31,7 +31,11 @@ These require account ownership/billing decisions and can't be done autonomously
 ### M3 — Create Supabase project
 - **Status:** done
 - **Description:** Create a Supabase account/project. Pick a region close to the church. Note down:
-  Project URL, `anon` public key, `service_role` secret key, DB password.
+  Project URL, **Publishable key** (`sb_publishable_...`), **Secret key** (`sb_secret_...`), and
+  DB password (still a separate mechanism from the API keys — needed for the Supabase CLI/direct
+  Postgres connections, e.g. `supabase link`, migrations). The legacy `anon`/`service_role` JWT
+  keys still exist and work, but the Publishable/Secret keys are current — use those for anything
+  new (see CONTEXT.md's key naming note).
 - **Definition of done:** Project created, credentials saved somewhere secure (password manager),
   shared with Claude via env vars (not pasted in chat) when needed for later tasks.
 - **Dependencies:** none.
