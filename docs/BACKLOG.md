@@ -113,7 +113,7 @@ These require account ownership/billing decisions and can't be done autonomously
 - **Dependencies:** A1.
 
 #### A3 — Vitest setup
-- **Status:** todo
+- **Status:** in-progress
 - **Description:** Add Vitest, configure for TypeScript/React, add one trivial passing test as
   proof of setup.
 - **Definition of done:** `pnpm test` runs and passes.
