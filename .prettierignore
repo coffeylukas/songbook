@@ -1,0 +1,20 @@
+# Lockfiles
+pnpm-lock.yaml
+
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+build/
+
+# Generated files
+next-env.d.ts
+
+# Static assets
+public/*.svg
+
+# Project docs and agent workflow files are prose, not code — leave them alone
+docs/
+.claude/
