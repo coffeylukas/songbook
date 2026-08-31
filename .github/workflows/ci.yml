@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Least privilege: this workflow only reads the repo.
+permissions:
+  contents: read
+
+# A newer push to the same branch supersedes the run in flight.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint, test, build
+    runs-on: ubuntu-latest
+    env:
+      # CI has no real Clerk/Supabase credentials and doesn't need any to lint,
+      # unit test, or build. env.ts is imported by next.config.ts, so `pnpm build`
+      # would otherwise fail fast on the missing vars. Never set this for a real
+      # deployment — see "Environment variables" in CLAUDE.md.
+      SKIP_ENV_VALIDATION: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # No version input: pnpm/action-setup reads `packageManager` from
+      # package.json, so the pnpm version is defined in exactly one place.
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
