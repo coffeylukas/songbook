@@ -98,7 +98,7 @@ These require account ownership/billing decisions and can't be done autonomously
 ### Epic 0 — Project scaffolding
 
 #### A1 — Initialize Next.js project
-- **Status:** in-progress
+- **Status:** done
 - **Description:** Scaffold a Next.js (App Router, TypeScript) app at the repo root using pnpm.
   Basic folder structure, no monorepo (see CONTEXT.md).
 - **Definition of done:** `pnpm dev` runs a default Next.js page locally.
