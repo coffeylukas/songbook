@@ -21,6 +21,10 @@ type EnvOverrides = Partial<Record<keyof typeof VALID_ENV, string | undefined>>;
  */
 async function loadEnv(overrides: EnvOverrides = {}) {
   vi.resetModules();
+  // These tests assert that validation *throws*; an ambient SKIP_ENV_VALIDATION
+  // (easy to export in a shell, since CI documents it) would make env.ts a
+  // no-op and turn every such assertion into a confusing failure.
+  vi.stubEnv("SKIP_ENV_VALIDATION", undefined);
   for (const [key, value] of Object.entries({ ...VALID_ENV, ...overrides })) {
     if (value === undefined) {
       vi.stubEnv(key, undefined);

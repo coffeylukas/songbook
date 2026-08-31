@@ -15,6 +15,9 @@ const CLIENT_ENV = {
 
 async function loadClientEnv() {
   vi.resetModules();
+  // See the note in env.test.ts: an ambient SKIP_ENV_VALIDATION would disable
+  // the very behaviour these tests assert on.
+  vi.stubEnv("SKIP_ENV_VALIDATION", undefined);
   vi.stubEnv("CLERK_SECRET_KEY", undefined);
   vi.stubEnv("SUPABASE_SECRET_KEY", undefined);
   for (const [key, value] of Object.entries(CLIENT_ENV)) {

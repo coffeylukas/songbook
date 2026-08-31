@@ -72,7 +72,8 @@ supabase start        # local Supabase (Postgres + Realtime) via Docker — not 
   `export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"; nvm use 22; corepack enable`.
 - **Playwright browsers are not installed by `pnpm install`.** On a fresh clone (and in CI),
   `pnpm test:e2e` fails with "Executable doesn't exist" until `pnpm test:e2e:install` has been run
-  once. A8/A9 need an explicit install step in the workflow.
+  once. CI's `ci.yml` doesn't run Playwright, so only A9 (the e2e/Supabase job) needs an explicit
+  install step in the workflow.
 
 ## Environment variables
 
