@@ -9,10 +9,13 @@ on:
 permissions:
   contents: read
 
-# A newer push to the same branch supersedes the run in flight.
+# A newer push to a PR branch supersedes the run in flight. Pushes to main are
+# never cancelled: two quick merges would otherwise leave the first commit with
+# a cancelled — not green — status, which matters if main's CI ever gates a
+# release or deploy.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   verify:
