@@ -120,7 +120,7 @@ These require account ownership/billing decisions and can't be done autonomously
 - **Dependencies:** A1.
 
 #### A4 — Playwright setup
-- **Status:** todo
+- **Status:** in-progress
 - **Description:** Add Playwright, configure against the local dev server, add one trivial test
   (e.g. homepage loads).
 - **Definition of done:** `pnpm test:e2e` runs and passes locally.
