@@ -18,12 +18,6 @@ jobs:
   verify:
     name: Lint, test, build
     runs-on: ubuntu-latest
-    env:
-      # CI has no real Clerk/Supabase credentials and doesn't need any to lint,
-      # unit test, or build. env.ts is imported by next.config.ts, so `pnpm build`
-      # would otherwise fail fast on the missing vars. Never set this for a real
-      # deployment — see "Environment variables" in CLAUDE.md.
-      SKIP_ENV_VALIDATION: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -53,3 +47,13 @@ jobs:
 
       - name: Build
         run: pnpm build
+        env:
+          # CI has no real Clerk/Supabase credentials and needs none to build.
+          # env.ts is imported by next.config.ts, so the build would otherwise
+          # fail fast on the missing vars. Never set this for a real deployment —
+          # see "Environment variables" in CLAUDE.md.
+          #
+          # Deliberately scoped to this step rather than the whole job: the env
+          # unit tests assert that validation *does* throw on a bad environment,
+          # so an ambient SKIP_ENV_VALIDATION would turn them into no-ops.
+          SKIP_ENV_VALIDATION: "1"
