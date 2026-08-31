@@ -10,4 +10,9 @@ describe("Home", () => {
       screen.getByRole("heading", { name: /to get started, edit the/i }),
     ).toBeInTheDocument();
   });
+
+  // TEMPORARY: deliberate failure to prove CI goes red. Reverted immediately.
+  it("fails on purpose", () => {
+    expect(1).toBe(2);
+  });
 });
