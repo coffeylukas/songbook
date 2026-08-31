@@ -42,10 +42,11 @@ These require account ownership/billing decisions and can't be done autonomously
 
 ### M4 — Create Clerk application
 - **Status:** done
-- **Description:** Create a Clerk account/application. Enable both **Email** (magic link/OTP) and
-  **Phone** (SMS OTP) as sign-in options — which one(s) to actually surface in the UI is a later,
-  cheap decision. Note the Publishable Key and Secret Key.
-- **Definition of done:** Clerk app exists with both providers enabled; keys saved securely.
+- **Description:** Create a Clerk account/application. Enable **Email** (magic link/OTP) as the
+  sign-in method. Phone/SMS OTP is deferred post-MVP for cost reasons — see
+  [FUTURE_FEATURES.md](FUTURE_FEATURES.md) — don't enable it yet. Note the Publishable Key and
+  Secret Key.
+- **Definition of done:** Clerk app exists with Email enabled; keys saved securely.
 - **Dependencies:** none.
 
 ### M5 — Activate Clerk's native Supabase integration (Clerk side)
@@ -68,68 +69,22 @@ These require account ownership/billing decisions and can't be done autonomously
   between the two systems anymore (a good sign it's configured correctly).
 - **Dependencies:** M3, M5.
 
-### M7 — Decide SMS provider/cost for phone OTP
-- **Status:** done
-- **Description:** Decide whether to use Clerk's built-in SMS (billed through Clerk) or bring your
-  own Twilio account for phone OTP. Either works; this is a cost/ownership preference.
-- **Definition of done:** Decision made and configured in Clerk dashboard; note which option was
-  chosen in this file.
-- **Dependencies:** M4.
-
-### M8 — Create Twilio account + SMS-capable number
+### M7 — Add secrets everywhere they're needed
 - **Status:** todo
-- **Description:** Create a Twilio account (or use an existing one). Provision a phone number
-  capable of sending SMS, or set up a Twilio Messaging Service (generally the better option — it
-  pools numbers and simplifies the compliance step in M9). Note the Account SID, Auth Token, and
-  phone number / Messaging Service SID.
-- **Definition of done:** Twilio account + SMS-capable number/Messaging Service exist; credentials
-  saved securely (password manager).
-- **Dependencies:** none.
-
-### M9 — Register A2P 10DLC (US SMS compliance)
-- **Status:** todo
-- **Description:** If texting US numbers on a standard Twilio long-code number, register a Brand
-  and Campaign for A2P 10DLC (via Twilio's console or your Messaging Service's compliance flow).
-  Unregistered application-to-person traffic gets filtered or blocked by carriers — this isn't
-  optional for reliable delivery. Approval timing varies (same-day to ~2 weeks); there are
-  typically both a one-time and a small recurring fee — check Twilio's current pricing rather than
-  assuming a number.
-- **Definition of done:** Brand + Campaign approved and linked to the number/Messaging Service
-  from M8.
-- **Dependencies:** M8.
-
-### M10 — Configure Clerk for self-delivered SMS
-- **Status:** todo
-- **Description:** Clerk's documented mechanism for bringing your own SMS provider is: toggle
-  **off** "Delivered by Clerk" for SMS in the Clerk dashboard, after which Clerk fires an
-  `sms.created` webhook (phone number + code) instead of sending it themselves, and you're
-  expected to deliver it via your own provider (Twilio, in our case). **Verify this against the
-  actual Clerk dashboard** — plan tier or dashboard changes since this was written might expose a
-  simpler native "enter your Twilio SID/Auth Token directly" option instead. Note in this file
-  which mechanism actually applies to this account, since A47 needs to be built against reality,
-  not this note.
-- **Definition of done:** Clerk confirmed configured to route SMS through Twilio; if it's the
-  webhook approach, the `sms.created` event is enabled in Clerk's webhook settings and its signing
-  secret is captured.
-- **Dependencies:** M4, M8.
-
-### M11 — Add secrets everywhere they're needed
-- **Status:** todo
-- **Description:** Once M3/M4/M8 credentials exist, add them all to: (a) a local `.env.local`
-  (never committed), (b) Vercel project → Settings → Environment Variables, (c) GitHub repo →
-  Settings → Secrets and variables → Actions (for CI). This includes the Twilio Account SID, Auth
-  Token, and phone number/Messaging Service SID from M8, alongside the Clerk/Supabase keys.
+- **Description:** Once M3/M4 credentials exist, add them to: (a) a local `.env.local` (never
+  committed), (b) Vercel project → Settings → Environment Variables, (c) GitHub repo → Settings →
+  Secrets and variables → Actions (for CI).
 - **Definition of done:** All three locations have matching, current values for every credential.
-- **Dependencies:** M2, M3, M4, M8.
+- **Dependencies:** M2, M3, M4.
 
-### M12 — Confirm CCLI (or equivalent) license status
+### M8 — Confirm CCLI (or equivalent) license status
 - **Status:** todo
 - **Description:** Not a code task — confirm the church's CCLI license (or whatever licensing
   applies) covers digitally displaying/reproducing the lyrics that'll be stored in this app.
 - **Definition of done:** Confirmed, noted here for the record. Doesn't block any other task.
 - **Dependencies:** none.
 
-### M13 — (Optional, later) Point a custom domain at Vercel
+### M9 — (Optional, later) Point a custom domain at Vercel
 - **Status:** todo
 - **Description:** If the church wants a custom domain instead of the default `*.vercel.app` URL,
   buy/configure it and point it at the Vercel project.
@@ -209,8 +164,6 @@ These require account ownership/billing decisions and can't be done autonomously
   green, tears down cleanly.
 - **Dependencies:** A4, A6, A8, and enough of Epic 1's migrations to be meaningful (at least
   A12–A16).
-- **Note:** Never call the real Twilio API from CI (A47 depends on this note) — mock/stub Twilio
-  sends in any test that exercises the SMS webhook path.
 
 ---
 
@@ -324,22 +277,6 @@ These require account ownership/billing decisions and can't be done autonomously
 - **Definition of done:** `supabase db reset` leaves the local DB with usable sample data.
 - **Dependencies:** A10–A13.
 
-#### A47 — Clerk SMS webhook → Twilio send handler
-- **Status:** todo
-- **Description:** (Numbered out of sequence — added after M7's Twilio decision, belongs here in
-  Epic 1 alongside A20.) *Only needed if M10 confirms Clerk's self-delivery/webhook mechanism
-  applies* — check M10's notes before starting; if Clerk exposes a native Twilio-credentials field
-  instead, this task is unnecessary and should be marked done-via-M10 with a note, not built.
-  Otherwise: a webhook route (same category as A20 — infrastructure glue, a legitimate exception to
-  the "no logic in Next.js" rule) that receives Clerk's `sms.created` event, verifies its signing
-  secret, extracts the phone number and code, and sends it via the Twilio API using the M8/M11
-  credentials.
-- **Definition of done:** A real OTP sign-in attempt results in an SMS actually sent through the
-  Twilio account from M8, not Clerk's own gateway. Failures are logged clearly and loudly — a
-  silent failure here means a user literally cannot log in. Twilio is never called from automated
-  tests (mock/stub it — see A9's note).
-- **Dependencies:** M8, M10, A20 (reuses the webhook-receiving pattern).
-
 ---
 
 ### Epic 2 — Frontend foundations
@@ -358,8 +295,9 @@ These require account ownership/billing decisions and can't be done autonomously
 - **Status:** todo
 - **Description:** Wire Clerk's Next.js SDK into the app: sign-in/sign-up routes, session
   provider, sign-out.
-- **Definition of done:** A user can sign in via email or phone OTP (whichever is enabled) and
-  land in the app authenticated.
+- **Definition of done:** A user can sign in via email (magic link/OTP) and land in the app
+  authenticated. Phone/SMS sign-in is out of scope for MVP — see
+  [FUTURE_FEATURES.md](FUTURE_FEATURES.md).
 - **Dependencies:** A1, M4.
 
 #### A24 — Role-aware route guards
