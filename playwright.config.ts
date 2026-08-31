@@ -1,9 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * Port for the dev server Playwright drives. Deliberately not 3000, so a dev
- * server the developer already has running there is never collided with (or
- * silently tested against). Single source of truth for `webServer` + `baseURL`.
+ * Port for the dev server Playwright drives. Deliberately not 3000, so an
+ * ordinary `pnpm dev` session isn't collided with. Note that `webServer` below
+ * sets `reuseExistingServer` locally, so anything already listening on THIS
+ * port is adopted rather than replaced — if a run behaves oddly, check for a
+ * stale server on 3100 first. Single source of truth for `webServer` + `baseURL`.
  */
 const PORT = 3100;
 // `localhost` (not 127.0.0.1) because Next's dev server treats it as a trusted

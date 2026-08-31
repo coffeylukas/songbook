@@ -50,16 +50,28 @@ the future desktop client.
 
 ## Commands
 
-Populated once A1 (project scaffold) is done. Until then, this section is a placeholder:
-
 ```bash
-pnpm dev          # local dev server
-pnpm test         # unit tests (Vitest)
-pnpm test:e2e     # integration tests (Playwright)
-pnpm lint         # eslint
-pnpm build        # production build
-supabase start    # local Supabase (Postgres + Realtime) via Docker
+pnpm dev              # local dev server (port 3000)
+pnpm build            # production build
+pnpm start            # serve the production build
+pnpm lint             # eslint
+pnpm format           # prettier --write
+pnpm format:check     # prettier --check (what CI runs)
+pnpm test             # unit tests (Vitest, single run)
+pnpm test:watch       # unit tests in watch mode
+pnpm test:e2e         # integration tests (Playwright, auto-starts a dev server on port 3100)
+pnpm test:e2e:install # one-time: download the Chromium binary Playwright needs
+supabase start        # local Supabase (Postgres + Realtime) via Docker — not set up until A6
 ```
+
+**Prerequisites, both easy to trip over:**
+
+- **Node 22 (>=20.9) and pnpm via corepack.** The system `node` on this machine is v14 and `pnpm`
+  is not on `PATH`; Next 16 will not run under it. Activate with
+  `export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"; nvm use 22; corepack enable`.
+- **Playwright browsers are not installed by `pnpm install`.** On a fresh clone (and in CI),
+  `pnpm test:e2e` fails with "Executable doesn't exist" until `pnpm test:e2e:install` has been run
+  once. A8/A9 need an explicit install step in the workflow.
 
 ## Environment variables
 
