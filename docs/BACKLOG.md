@@ -107,7 +107,7 @@ These require account ownership/billing decisions and can't be done autonomously
   around those, don't overwrite them.
 
 #### A2 — Lint/format setup
-- **Status:** in-progress
+- **Status:** done
 - **Description:** Configure ESLint + Prettier with sensible defaults for Next.js/TypeScript.
 - **Definition of done:** `pnpm lint` runs clean on the scaffolded project.
 - **Dependencies:** A1.
