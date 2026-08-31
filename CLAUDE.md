@@ -3,6 +3,16 @@
 Guidance for Claude Code sessions working in this repo. Read [docs/CONTEXT.md](docs/CONTEXT.md)
 first — it has the full architecture rationale. This file is the "how to work" companion.
 
+## Multi-agent workflow
+
+Autonomous tasks are normally built via `/next-task` (see
+[docs/MULTI_AGENT_WORKFLOW.md](docs/MULTI_AGENT_WORKFLOW.md)), which dispatches
+`task-implementer` subagents per task. Ground rule: **only the orchestrator (`/next-task`)
+updates `docs/BACKLOG.md` status**, and only after review — an implementer subagent (or you,
+working a task by hand outside the workflow) reports what changed but doesn't mark its own task
+`done`. This prevents a task being marked complete before it's actually been checked against its
+Definition of Done.
+
 ## Working model
 
 - Work is tracked in [docs/BACKLOG.md](docs/BACKLOG.md), split into **Manual** (the user does
