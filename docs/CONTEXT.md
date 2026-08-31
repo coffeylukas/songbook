@@ -32,7 +32,7 @@ desktop client could plug into later without backend rework.
 | Auth | Clerk | Email magic link + SMS OTP both supported; which one(s) are actually enabled at launch is a launch-time decision, not an architecture one. |
 | Database | Supabase (Postgres) | Real SQL + full-text search (`tsvector`), no NoSQL needed — the data is relational (songs, plans, plan_items, profiles). |
 | Identity sync | Clerk → Supabase `profiles` table via webhook | Clerk is the source of truth for identity. Supabase RLS needs role data *inside Postgres* to enforce permissions, so a `profiles` table mirrors `clerk_user_id`, `role`, `display_name`, kept in sync via a Clerk webhook. |
-| Auth↔DB trust | Clerk JWT template ("supabase") + Supabase Third-Party Auth config | Native, documented Clerk↔Supabase integration — Clerk issues a JWT, Supabase validates it via JWKS for RLS. No custom token exchange code needed. |
+| Auth↔DB trust | Clerk native Third-Party Auth integration (no JWT template) | The old "Supabase JWT template" approach was deprecated by Clerk on April 1, 2025 (it required sharing your Supabase JWT secret with Clerk). Current approach: activate the Supabase integration in Clerk (Clerk side) to get a Clerk domain, add Clerk as a Third-Party Auth provider in Supabase using that domain (Supabase side). No shared secret. The Supabase client is created with an `accessToken()` callback that returns `session.getToken()` (client) / `auth().getToken()` (server) — no manual JWT copying. |
 | Realtime / live sync | Supabase Realtime, backed by a `live_session` table | See "Sync mechanism" below — this is the one deliberate course-correction from earlier planning. |
 | Lyrics/chords format | ChordPro text stored in `songs.chordpro_body`, rendered client-side with `chordsheetjs` | Standard worship-software format. Plain lyrics with no chord tags is still valid ChordPro, so this costs nothing even if chord rendering isn't built first. |
 | Testing | Vitest (unit) + Playwright (integration/e2e) | |
@@ -72,7 +72,12 @@ plan's song data client-side (IndexedDB) when a plan goes live — not by the sy
 
 ## Roles
 
-Three roles, stored in `profiles.role`, enforced via RLS policies keyed off the Clerk JWT claim:
+Three roles, stored in `profiles.role`, enforced via RLS policies. The native Clerk↔Supabase
+integration only puts the Clerk user ID in the JWT (`auth.jwt()->>'sub'`) — it does **not**
+automatically expose custom fields like role. So RLS policies resolve role via a subquery: match
+`auth.jwt()->>'sub'` against `profiles.clerk_user_id`, then read `profiles.role`. (Alternative
+would be a custom Clerk session claim, but that duplicates data we already mirror into `profiles`
+via the webhook — no reason to maintain both.)
 
 - **admin** — full access, including user role management.
 - **editor** — can create/edit/delete songs and plans, cannot manage users.

@@ -11,7 +11,7 @@ See [CONTEXT.md](CONTEXT.md) for architecture rationale referenced throughout.
 These require account ownership/billing decisions and can't be done autonomously.
 
 ### M1 — Create GitHub repository
-- **Status:** todo
+- **Status:** done
 - **Description:** Create a new, empty, private GitHub repository for this project under your
   account.
 - **Definition of done:** Repo exists; you've shared the repo URL (or given push access) so A7 can
@@ -19,15 +19,17 @@ These require account ownership/billing decisions and can't be done autonomously
 - **Dependencies:** none.
 
 ### M2 — Create Vercel project
-- **Status:** todo
+- **Status:** in-progress
 - **Description:** Create a Vercel account (if needed) and a new project. Once M1's repo has code
   pushed (after A7), import it via "Add New Project" and select Next.js as the framework preset.
 - **Definition of done:** Vercel project exists and is linked to the GitHub repo; preview deploys
   trigger on PRs.
 - **Dependencies:** M1, A7.
+- **Note:** Account/project shell exists; full DoD (linked to repo, preview deploys firing) can't
+  complete until A7 pushes actual code.
 
 ### M3 — Create Supabase project
-- **Status:** todo
+- **Status:** done
 - **Description:** Create a Supabase account/project. Pick a region close to the church. Note down:
   Project URL, `anon` public key, `service_role` secret key, DB password.
 - **Definition of done:** Project created, credentials saved somewhere secure (password manager),
@@ -35,31 +37,35 @@ These require account ownership/billing decisions and can't be done autonomously
 - **Dependencies:** none.
 
 ### M4 — Create Clerk application
-- **Status:** todo
+- **Status:** done
 - **Description:** Create a Clerk account/application. Enable both **Email** (magic link/OTP) and
   **Phone** (SMS OTP) as sign-in options — which one(s) to actually surface in the UI is a later,
   cheap decision. Note the Publishable Key and Secret Key.
 - **Definition of done:** Clerk app exists with both providers enabled; keys saved securely.
 - **Dependencies:** none.
 
-### M5 — Create Clerk JWT template for Supabase
-- **Status:** todo
-- **Description:** In the Clerk dashboard, create a JWT template named `supabase` following
-  Clerk's official Supabase integration guide. This is what lets Supabase trust Clerk sessions.
-- **Definition of done:** JWT template exists and is confirmed against Clerk's current docs (their
-  integration steps do change over time — follow what's live, not just this note).
+### M5 — Activate Clerk's native Supabase integration (Clerk side)
+- **Status:** done
+- **Description:** ~~Create a JWT template~~ — **superseded.** Clerk deprecated the "Supabase JWT
+  template" approach on April 1, 2025 (it required sharing your Supabase JWT secret with Clerk).
+  Current approach: in the Clerk dashboard, go to the Supabase integration setup, select
+  configuration options, and activate it. This reveals your **Clerk domain**, which M6 needs.
+- **Definition of done:** Integration activated in Clerk; Clerk domain captured for use in M6.
 - **Dependencies:** M4.
+- **Note:** Marked done on the assumption this necessarily happened as part of getting M6 done
+  (M6 needs the Clerk domain this step produces) — flag if that's not actually the case.
 
 ### M6 — Configure Supabase Third-Party Auth (Clerk)
-- **Status:** todo
+- **Status:** done
 - **Description:** In the Supabase dashboard (Authentication → Sign In / Providers → Third Party
-  Auth), add Clerk as a provider using Clerk's JWKS URL, per Supabase's Clerk integration docs.
-- **Definition of done:** Supabase accepts Clerk-issued JWTs; a manual test token from Clerk
-  validates against Supabase (can be confirmed once A24's Supabase client wiring exists).
+  Auth), add Clerk as a provider using the **Clerk domain** from M5 (not a JWKS URL from a JWT
+  template — that was the deprecated flow).
+- **Definition of done:** Supabase trusts Clerk-issued session tokens. No shared secret exists
+  between the two systems anymore (a good sign it's configured correctly).
 - **Dependencies:** M3, M5.
 
 ### M7 — Decide SMS provider/cost for phone OTP
-- **Status:** todo
+- **Status:** done
 - **Description:** Decide whether to use Clerk's built-in SMS (billed through Clerk) or bring your
   own Twilio account for phone OTP. Either works; this is a cost/ownership preference.
 - **Definition of done:** Decision made and configured in Clerk dashboard; note which option was
@@ -210,15 +216,18 @@ These require account ownership/billing decisions and can't be done autonomously
 
 #### A15 — RLS policies
 - **Status:** todo
-- **Description:** Row-level security policies for all tables, keyed off `profiles.role` (resolved
-  from the Clerk JWT claim). Per CONTEXT.md's roles section: `admin` full access; `editor`
-  CRUD on songs/plans, no user management; `member` read-only on songs/plans, but *can* write
-  `live_session` (running a plan doesn't require edit rights).
+- **Description:** Row-level security policies for all tables, keyed off `profiles.role`. The
+  native Clerk↔Supabase integration only puts the Clerk user ID in the JWT
+  (`auth.jwt()->>'sub'`), not custom fields — so policies resolve role via a subquery: match
+  `auth.jwt()->>'sub'` against `profiles.clerk_user_id`, then read that row's `role`. Per
+  CONTEXT.md's roles section: `admin` full access; `editor` CRUD on songs/plans, no user
+  management; `member` read-only on songs/plans, but *can* write `live_session` (running a plan
+  doesn't require edit rights).
 - **Definition of done:** Policies exist for all four tables; at minimum a test (manual or
   scripted) confirms a `member`-role token can read songs/plans, write `live_session`, but cannot
   write songs/plans; an `editor` can write songs/plans but not change another user's role.
-- **Dependencies:** A10–A14, M6 (Clerk JWT must be trusted by Supabase for role claims to mean
-  anything).
+- **Dependencies:** A10–A14, M6 (Clerk sessions must be trusted by Supabase for `auth.jwt()->>'sub'`
+  to mean anything).
 
 #### A16 — Full-text search index
 - **Status:** todo
@@ -277,11 +286,13 @@ These require account ownership/billing decisions and can't be done autonomously
 
 #### A22 — Supabase client helpers
 - **Status:** todo
-- **Description:** Browser and server Supabase client factories that attach the current Clerk
-  session token (per Clerk's native Supabase integration pattern — no manual JWT copying).
+- **Description:** Browser and server Supabase client factories created with an `accessToken()`
+  callback (the current native integration pattern, not the deprecated JWT-template flow):
+  client-side returns `session?.getToken() ?? null`, server-side returns
+  `(await auth()).getToken()`. No manual JWT copying, no shared secret.
 - **Definition of done:** A server component and a client component can each successfully query
   Supabase with the signed-in user's identity applied (confirmable once RLS from A15 is in place).
-- **Dependencies:** A1, A5, M3, M4, M6.
+- **Dependencies:** A1, A5, M3, M4, M5, M6.
 
 #### A23 — Clerk sign-in/sign-up UI
 - **Status:** todo
