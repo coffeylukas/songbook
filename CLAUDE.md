@@ -8,25 +8,26 @@ first — it has the full architecture rationale. This file is the "how to work"
 Autonomous tasks are normally built via `/next-task` (see
 [docs/MULTI_AGENT_WORKFLOW.md](docs/MULTI_AGENT_WORKFLOW.md)), which dispatches
 `task-implementer` subagents per task. Ground rule: **only the orchestrator (`/next-task`)
-updates `docs/BACKLOG.md` status**, and only after review — an implementer subagent (or you,
-working a task by hand outside the workflow) reports what changed but doesn't mark its own task
-`done`. This prevents a task being marked complete before it's actually been checked against its
-Definition of Done.
+closes GitHub issues or moves the Project board**, and only after review — an implementer
+subagent (or you, working a task by hand outside the workflow) reports what changed but doesn't
+mark its own issue done. This prevents a task being marked complete before it's actually been
+checked against its Definition of Done.
 
 ## Working model
 
-- Work is tracked in [docs/BACKLOG.md](docs/BACKLOG.md), split into **Manual** (the user does
-  these — accounts, dashboard config) and **Autonomous** (Claude does these) tasks.
-- Pick up **one task at a time**, in dependency order. Don't start a task whose dependencies
-  (including manual ones) aren't marked done.
-- If an autonomous task turns out to depend on a manual task that isn't done yet (e.g. no Supabase
-  project exists), stop and say so rather than guessing at credentials/config.
-- When a task is finished: update its status in `docs/BACKLOG.md` (`todo` → `done`), write tests
-  per its Definition of Done, and commit with a message referencing the task ID (e.g.
-  `A13: add songs table migration`).
+- Work is tracked as **GitHub Issues** (labeled `type:manual` / `type:autonomous` / `epic:N-...`)
+  on a Project board (Status: Todo / In Progress / Done). `docs/BACKLOG.md` is retired — don't
+  read task state from it.
+- Pick up **one task at a time**, in dependency order — an issue's body has a "Depends on: #N"
+  line. Don't start a task whose dependencies (including manual ones) aren't closed.
+- If an autonomous task turns out to depend on a manual (`type:manual`) issue that isn't closed
+  yet (e.g. no Supabase project exists), stop and say so rather than guessing at credentials/config.
+- When a task is finished: close its issue and move its board item to Done (the orchestrator does
+  this, not the implementer — see the ground rule above), write tests per its Definition of Done,
+  and commit with a message referencing the task ID (e.g. `A13: add songs table migration`).
 - If you discover a task's plan is wrong once you're inside it (bad assumption, missing
-  dependency), fix the backlog entry to reflect reality — don't silently diverge from what's
-  written.
+  dependency), edit the issue body to reflect reality (`gh issue edit`) — don't silently diverge
+  from what's written and leave future readers with stale instructions.
 
 ## The rule that matters most
 
