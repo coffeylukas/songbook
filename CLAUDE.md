@@ -62,10 +62,18 @@ pnpm test             # unit tests (Vitest, single run)
 pnpm test:watch       # unit tests in watch mode
 pnpm test:e2e         # integration tests (Playwright, auto-starts a dev server on port 3100)
 pnpm test:e2e:install # one-time: download the Chromium binary Playwright needs
-supabase start        # local Supabase (Postgres + Realtime) via Docker — not set up until A6
+pnpm db:start         # local Supabase (Postgres + Auth + Realtime) via Docker
+pnpm db:stop          # tear the local stack down
+pnpm db:status        # URLs and keys for the running local stack
+pnpm db:reset         # recreate the local DB and re-apply supabase/migrations/
 ```
 
-**Prerequisites, both easy to trip over:**
+The local stack deliberately runs only what the app depends on — db, auth, realtime, rest, kong,
+edge functions. Studio, analytics, storage and local SMTP are disabled in
+[`supabase/config.toml`](supabase/config.toml), each with a comment saying why and how to turn it
+back on.
+
+**Prerequisites, all easy to trip over:**
 
 - **Node 22 (>=20.9) and pnpm via corepack.** The system `node` on this machine is v14 and `pnpm`
   is not on `PATH`; Next 16 will not run under it. Activate with
@@ -74,6 +82,15 @@ supabase start        # local Supabase (Postgres + Realtime) via Docker — not 
   `pnpm test:e2e` fails with "Executable doesn't exist" until `pnpm test:e2e:install` has been run
   once. CI's `ci.yml` doesn't run Playwright, so only A9 (the e2e/Supabase job) needs an explicit
   install step in the workflow.
+- **The `docker` CLI first on `PATH` may be too old for the running daemon.** On this machine
+  `/usr/local/bin/docker` is Docker Desktop's 20.10.23 (API 1.41), which the Colima daemon rejects
+  with `client version 1.41 is too old. Minimum supported API version is 1.44` — so every
+  `pnpm db:*` command fails. A current CLI lives at `/usr/local/opt/docker/bin/docker` (29.x);
+  put it first: `export PATH="/usr/local/opt/docker/bin:$PATH"`.
+- **A hanging Docker credential helper blocks image pulls.** If `~/.docker/config.json` sets
+  `"credsStore": "desktop"` and Docker Desktop isn't the active runtime, the helper never returns,
+  so `docker pull` (and therefore a first-run `pnpm db:start`) hangs indefinitely rather than
+  failing. Fix by setting `"osxkeychain"` or removing the line.
 
 ## Environment variables
 
