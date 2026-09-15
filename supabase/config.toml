@@ -365,9 +365,13 @@ enabled = false
 
 # Use Clerk as a third-party provider alongside Supabase Auth.
 [auth.third_party.clerk]
-enabled = false
+# Required for the whole auth model: RLS resolves a caller's role by matching
+# `auth.jwt()->>'sub'` against `profiles.clerk_user_id`, which only works if the
+# local stack trusts Clerk-issued JWTs. See docs/CONTEXT.md.
+# Not a secret — this domain is public and ships in the browser bundle.
+enabled = true
 # Obtain from https://clerk.com/setup/supabase
-# domain = "example.clerk.accounts.dev"
+domain = "welcomed-seahorse-7629.clerk.accounts.dev"
 
 # OAuth server configuration
 [auth.oauth_server]
